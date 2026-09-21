@@ -1,0 +1,37 @@
+-- =================================================================
+-- Migration: remove salary_slip_access from `users`
+-- =================================================================
+-- Run this ONCE against your existing live database. It is NOT run
+-- automatically by the application — schema.sql only CREATEs tables
+-- that don't exist yet, so it never alters your already-existing
+-- `users` table.
+--
+-- HOW TO RUN (pick one):
+--   1) MySQL Workbench: open this file, click the lightning-bolt
+--      "Execute" button.
+--   2) Command line:
+--        mysql -u <your_user> -p salary_slip < migration_remove_users_salary_slip_access.sql
+--      (replace `salary_slip` with your actual database name if different)
+--
+-- SAFE TO RE-RUN: uses "IF EXISTS", so running this twice by mistake
+-- does nothing the second time and will not throw an error.
+--
+-- WHAT THIS DOES AND WHY:
+--   Every account created through the Users page (Admin, HR, Super
+--   Admin, or any other staff account) now always has full Salary
+--   Slips access (view and download) — this is enforced in the
+--   application code itself, not stored per-account anymore. The
+--   column is dropped entirely rather than just left unused.
+--
+--   This does NOT affect Employee Master — employees keep their own,
+--   fully independent `salary_slip_access` column on the `employees`
+--   table, which still varies per employee exactly as before.
+--
+--   This is a destructive change: whatever value each user row
+--   currently has in this column will be permanently lost. That's
+--   safe here specifically because the application no longer reads
+--   or writes that value for any users-table account either way.
+-- =================================================================
+
+ALTER TABLE users
+  DROP COLUMN IF EXISTS salary_slip_access;

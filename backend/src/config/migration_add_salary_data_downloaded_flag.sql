@@ -1,0 +1,38 @@
+-- =================================================================
+-- Migration: add `downloaded` tracking column to `salary_data`
+-- =================================================================
+-- Run this ONCE against your existing live database.
+--
+-- HOW TO RUN:
+--   mysql -u <your_user> -p salary_slip < migration_add_salary_data_downloaded_flag.sql
+--   (replace `salary_slip` with your actual database name if different)
+--
+-- SAFE TO RE-RUN: uses "IF NOT EXISTS", so running this twice by
+-- mistake does nothing the second time.
+--
+-- WHAT THIS DOES AND WHY:
+--   Adds one column, `downloaded` (0 or 1), tracking whether the
+--   EMPLOYEE themselves has downloaded their own salary slip for
+--   that period — not an Admin/HR download on their behalf. Set to 1
+--   the first time the employee downloads it; stays 1 no matter how
+--   many more times they download it afterward (it's a flag, not a
+--   counter). Automatically reset to 0 whenever that record's own
+--   figures are edited or re-imported, since a previously-downloaded
+--   copy no longer reflects the updated numbers.
+--
+--   This column is added here in `salary_data` — ahead of a future,
+--   separately-planned merge of the `salary_slips` table into
+--   `salary_data` — but that merge is NOT happening as part of this
+--   migration. `salary_slips` remains its own table, unchanged.
+--
+--   This column is never exposed through any API response or shown
+--   anywhere in the application itself — it exists purely for direct
+--   database inspection when needed.
+--
+--   Every existing row gets downloaded = 0 by default, since there is
+--   no way to know retroactively whether any employee had already
+--   downloaded their slip before this column existed.
+-- =================================================================
+
+ALTER TABLE salary_data
+  ADD COLUMN IF NOT EXISTS downloaded TINYINT(1) NOT NULL DEFAULT 0 AFTER net_pay;
